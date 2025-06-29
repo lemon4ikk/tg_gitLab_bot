@@ -2,12 +2,30 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
+
+func getNestedString(data map[string]interface{}, path ...string) (string, bool) {
+	var current interface{} = data
+	for _, p := range path[:len(path)-1] {
+		m, ok := current.(map[string]interface{})
+		if !ok {
+			return "", false
+		}
+		current = m[p]
+	}
+	m, ok := current.(map[string]interface{})
+	if !ok {
+		return "", false
+	}
+	val, ok := m[path[len(path)-1]].(string)
+	return val, ok
+}
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -29,9 +47,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//name := data["name"].(string)
-	project := data["project"].(string)
-	//event := data["event_type"].(string)
+	val, ok := getNestedString(data, "user", "name")
+	if ok {
+		fmt.Println("user.name =", val)
+	}
 
 	bot, err := tgbotapi.NewBotAPI("7653357171:AAH0irLiLcA8TvZTXHNY3f_pCZMzVPMN0_E")
 	chatID := int64(414747434) // ID бота
@@ -42,8 +61,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	bot.Debug = true
 
-	//m := string(body)
-	m := string(project)
+	m := string(val)
 	msg := tgbotapi.NewMessage(chatID, m)
 	bot.Send(msg)
 
