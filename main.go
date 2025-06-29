@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -23,9 +22,22 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	values, err := url.ParseQuery(string(body))
+	var data map[string]interface{}
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		return
+	}
+
+	/* values, err := url.ParseQuery(string(body))
 	if err != nil {
 		http.Error(w, "Invalid form data", http.StatusBadRequest)
+		return
+	} */
+
+	jsonString, err := json.MarshalIndent(data, "", "  ") // или json.Marshal(data) без форматирования
+	if err != nil {
+		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
 		return
 	}
 
@@ -38,20 +50,22 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	bot.Debug = true
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	m := string(body)
+	msg := tgbotapi.NewMessage(chatID, m)
+	bot.Send(msg)
 
-	count := 0
+	/* count := 0
 	for _, value := range values {
 		m := value[count]
 
 		msg := tgbotapi.NewMessage(chatID, m)
 		bot.Send(msg)
 		count++
-	}
+	} */
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(values)
+	json.NewEncoder(w).Encode(jsonString)
 }
 
 func main() {
