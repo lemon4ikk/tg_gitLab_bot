@@ -29,17 +29,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/* values, err := url.ParseQuery(string(body))
-	if err != nil {
-		http.Error(w, "Invalid form data", http.StatusBadRequest)
-		return
-	} */
-
-	jsonString, err := json.MarshalIndent(data, "", "  ") // или json.Marshal(data) без форматирования
-	if err != nil {
-		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
-		return
-	}
+	//name := data["name"].(string)
+	project := data["project"].(string)
+	//event := data["event_type"].(string)
 
 	bot, err := tgbotapi.NewBotAPI("7653357171:AAH0irLiLcA8TvZTXHNY3f_pCZMzVPMN0_E")
 	chatID := int64(414747434) // ID бота
@@ -50,22 +42,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	bot.Debug = true
 
-	m := string(body)
+	//m := string(body)
+	m := string(project)
 	msg := tgbotapi.NewMessage(chatID, m)
 	bot.Send(msg)
 
-	/* count := 0
-	for _, value := range values {
-		m := value[count]
-
-		msg := tgbotapi.NewMessage(chatID, m)
-		bot.Send(msg)
-		count++
-	} */
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(jsonString)
+	json.NewEncoder(w).Encode(body)
 }
 
 func main() {
